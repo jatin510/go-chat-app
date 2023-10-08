@@ -6,7 +6,7 @@ import (
 )
 
 type ChatServiceInterface interface {
-	Send(string, models.CID, models.CID) error
+	Send(msg string, roomId models.CID, userId models.CID) error
 }
 
 type ChatService struct {
