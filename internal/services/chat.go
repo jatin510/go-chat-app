@@ -1,20 +1,23 @@
 package services
 
-import "github.com/jatin510/go-chat-app/internal/models"
+import (
+	"github.com/jatin510/go-chat-app/internal/models"
+	"github.com/jatin510/go-chat-app/internal/repository"
+)
 
-type Chat interface {
+type ChatServiceInterface interface {
 	Send(string, models.CID, models.CID) error
 }
 
 type ChatService struct {
-	l  models.Logger
-	db *models.DBType
+	l    models.Logger
+	repo *repository.Repository
 }
 
-func NewChatService(l models.Logger, db *models.DBType) Chat {
+func NewChatService(repo *repository.Repository, l models.Logger) ChatServiceInterface {
 	return &ChatService{
-		l:  l,
-		db: db,
+		repo: repo,
+		l:    l,
 	}
 }
 
