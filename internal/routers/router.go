@@ -1,13 +1,19 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
+	"github.com/jatin510/go-chat-app/internal/controller"
 	"github.com/jatin510/go-chat-app/internal/models"
-	"github.com/jatin510/go-chat-app/internal/services"
 )
 
-func Init(services services.Services, l models.Logger) *mux.Router {
+func Init(controller *controller.Controllers, l models.Logger) *mux.Router {
 	router := mux.NewRouter()
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	}).Methods("GET")
 
 	// TODO
 	// restRouter.Use(authMiddlware)
