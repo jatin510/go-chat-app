@@ -35,6 +35,9 @@ func main() {
 	// init services
 	_ = services.Init(repo, l)
 
+	// init controller
+	// _ = controller.Init(services)
+
 	// init router
 	// router := route.InitRoute(services, l)
 
