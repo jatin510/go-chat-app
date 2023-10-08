@@ -10,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jatin510/go-chat-app/internal/controller"
 	"github.com/jatin510/go-chat-app/internal/models"
 	"github.com/jatin510/go-chat-app/internal/repository"
+	router "github.com/jatin510/go-chat-app/internal/routers"
 	"github.com/jatin510/go-chat-app/internal/services"
 	"github.com/jatin510/go-chat-app/internal/utils"
 )
@@ -33,20 +35,20 @@ func main() {
 	repo := repository.Init(DB, l)
 
 	// init services
-	_ = services.Init(repo, l)
+	services := services.Init(repo, l)
 
 	// init controller
-	// _ = controller.Init(services)
+	controllers := controller.Init(services, l)
 
 	// init router
-	// router := route.InitRoute(services, l)
+	router := router.Init(controllers, l)
 
 	port := "4000"
 
 	s := http.Server{
-		Addr:     ":" + port,
-		ErrorLog: slog.NewLogLogger(slog.NewJSONHandler(os.Stderr, nil), slog.LevelError),
-		// Handler:      router,
+		Addr:         ":" + port,
+		ErrorLog:     slog.NewLogLogger(slog.NewJSONHandler(os.Stderr, nil), slog.LevelError),
+		Handler:      router,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
