@@ -1,6 +1,9 @@
 package repository
 
-import "github.com/jatin510/go-chat-app/internal/models"
+import (
+	"github.com/jackc/pgx/v4"
+	"github.com/jatin510/go-chat-app/internal/models"
+)
 
 type UserRepoInterface interface {
 	create(models.User) (models.User, error)
@@ -12,11 +15,11 @@ type UserRepoInterface interface {
 }
 
 type user struct {
-	db models.DBType
+	db *pgx.Conn
 	l  models.Logger
 }
 
-func NewUserRepo(db models.DBType, l models.Logger) UserRepoInterface {
+func NewUserRepo(db *pgx.Conn, l models.Logger) UserRepoInterface {
 	return &user{
 		db: db,
 		l:  l,

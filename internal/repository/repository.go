@@ -1,6 +1,9 @@
 package repository
 
-import "github.com/jatin510/go-chat-app/internal/models"
+import (
+	"github.com/jackc/pgx/v4"
+	"github.com/jatin510/go-chat-app/internal/models"
+)
 
 type Repository struct {
 	Message MessageRepoInterface
@@ -8,7 +11,7 @@ type Repository struct {
 	Room    RoomRepoInterface
 }
 
-func Init(db models.DBType, l models.Logger) *Repository {
+func Init(db *pgx.Conn, l models.Logger) *Repository {
 	return &Repository{
 		User:    NewUserRepo(db, l),
 		Room:    NewRoomRepo(db, l),

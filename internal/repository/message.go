@@ -1,6 +1,9 @@
 package repository
 
-import "github.com/jatin510/go-chat-app/internal/models"
+import (
+	"github.com/jackc/pgx/v4"
+	"github.com/jatin510/go-chat-app/internal/models"
+)
 
 type MessageRepoInterface interface {
 	create(models.Message) (models.Message, error)
@@ -12,11 +15,11 @@ type MessageRepoInterface interface {
 }
 
 type message struct {
-	db models.DBType
+	db *pgx.Conn
 	l  models.Logger
 }
 
-func NewMessageRepo(db models.DBType, l models.Logger) MessageRepoInterface {
+func NewMessageRepo(db *pgx.Conn, l models.Logger) MessageRepoInterface {
 	return &message{
 		db: db,
 		l:  l,
