@@ -10,26 +10,31 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jatin510/go-chat-app/internal/controller"
-	"github.com/jatin510/go-chat-app/internal/models"
+	"github.com/jatin510/go-chat-app/internal/db"
 	"github.com/jatin510/go-chat-app/internal/repository"
 	router "github.com/jatin510/go-chat-app/internal/routers"
 	"github.com/jatin510/go-chat-app/internal/services"
 	"github.com/jatin510/go-chat-app/internal/utils"
+	"github.com/joho/godotenv"
 )
 
 var (
-	DB models.DBType
-	// DB_Client *mongo.Client
+	DB *pgx.Conn
 )
 
 func init() {
-	// DB_Client, DB = database.InitDatabase()
+	if err := godotenv.Load(); err != nil {
+		panic("Error loading .env file")
+	}
 }
 
 func main() {
 
 	l := utils.NewLogger()
+
+	DB = db.Init(l)
 
 	// init repository
 	repo := repository.Init(DB, l)
@@ -68,7 +73,10 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
-		// extra handling here
+		// closing database connection
+		DB.Close(context.Background())
+
+		// closing context
 		cancel()
 	}()
 

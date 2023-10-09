@@ -1,6 +1,9 @@
 package repository
 
-import "github.com/jatin510/go-chat-app/internal/models"
+import (
+	"github.com/jackc/pgx/v4"
+	"github.com/jatin510/go-chat-app/internal/models"
+)
 
 type RoomRepoInterface interface {
 	create(models.Room) (models.Room, error)
@@ -12,11 +15,11 @@ type RoomRepoInterface interface {
 }
 
 type room struct {
-	db models.DBType
+	db *pgx.Conn
 	l  models.Logger
 }
 
-func NewRoomRepo(db models.DBType, l models.Logger) RoomRepoInterface {
+func NewRoomRepo(db *pgx.Conn, l models.Logger) RoomRepoInterface {
 	return &room{
 		db: db,
 		l:  l,
