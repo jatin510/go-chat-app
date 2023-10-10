@@ -1,5 +1,7 @@
 package socket
 
+import "github.com/jatin510/go-chat-app/internal/models"
+
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -15,7 +17,7 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
-	rooms map[string][]*Client
+	rooms map[models.CID][]*Client
 }
 
 func newHub() *Hub {

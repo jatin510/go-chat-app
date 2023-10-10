@@ -2,11 +2,14 @@ package socket
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/jatin510/go-chat-app/internal/models"
 )
 
 const (
@@ -42,6 +45,8 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	userId models.CID
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -123,11 +128,39 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+
+	// user info from database
+	userId := getUserData(conn)
+
+	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), userId: userId}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
 	go client.readPump()
+}
+
+type UserWSPayload struct {
+	UserId models.CID `json:"userId"`
+}
+
+func getUserData(conn *websocket.Conn) models.CID {
+	_, message, err := conn.ReadMessage()
+	if err != nil {
+		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			log.Printf("error: %v", err)
+		}
+		// break
+	}
+	message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+
+	var u UserWSPayload
+	err = json.Unmarshal(message, &u)
+	if err != nil {
+		log.Printf("error: %v", err)
+	}
+
+	fmt.Println("Messagge", u)
+	return u.UserId
 }
