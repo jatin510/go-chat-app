@@ -4,8 +4,10 @@ go 1.21.1
 
 require (
 	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/joho/godotenv v1.5.1
+	github.com/rs/cors v1.10.1
 )
 
 require (

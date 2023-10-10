@@ -16,8 +16,10 @@ import (
 	"github.com/jatin510/go-chat-app/internal/repository"
 	router "github.com/jatin510/go-chat-app/internal/routers"
 	"github.com/jatin510/go-chat-app/internal/services"
+	"github.com/jatin510/go-chat-app/internal/socket"
 	"github.com/jatin510/go-chat-app/internal/utils"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 var (
@@ -48,12 +50,17 @@ func main() {
 	// init router
 	router := router.Init(controllers, l)
 
+	// init socket connection
+	socket.Init(router)
+
 	port := "4000"
+
+	handler := cors.Default().Handler(router)
 
 	s := http.Server{
 		Addr:         ":" + port,
 		ErrorLog:     slog.NewLogLogger(slog.NewJSONHandler(os.Stderr, nil), slog.LevelError),
-		Handler:      router,
+		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
