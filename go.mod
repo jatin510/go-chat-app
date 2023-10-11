@@ -3,6 +3,7 @@ module github.com/jatin510/go-chat-app
 go 1.21.1
 
 require (
+	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/jackc/pgx/v4 v4.18.1
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/google/uuid v1.3.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect

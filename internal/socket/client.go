@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -56,12 +55,14 @@ type Client struct {
 type Socket struct {
 	hub      *Hub
 	services *services.Services
+	l        models.Logger
 }
 
-func NewSocket(hub *Hub, services *services.Services) *Socket {
+func NewSocket(hub *Hub, services *services.Services, l models.Logger) *Socket {
 	return &Socket{
 		hub:      hub,
 		services: services,
+		l:        l,
 	}
 }
 
@@ -82,7 +83,7 @@ func (c *Client) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				fmt.Printf("error: %v\n", err)
 			}
 			break
 		}
@@ -142,7 +143,7 @@ func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
 	userId, err := sck.getUserIdFromRequest(r)
 	if err != nil {
 		// TODO: update to slog
-		log.Println(err.Error())
+		sck.l.Error(err.Error())
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Unauthorized"))
 		return
@@ -152,10 +153,14 @@ func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
 	// token := r.URL.Query().Get("token")
 
 	rooms, err := sck.getUserRooms(userId)
+	if err != nil {
+		// TODO: update to slog
+		sck.l.Error(err.Error())
+	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		sck.l.Error(err.Error())
 		return
 	}
 
@@ -167,7 +172,7 @@ func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
 
 	err = sck.insertClientInRooms(rooms, client)
 	if err != nil {
-		log.Println(err)
+		sck.l.Error(err.Error())
 		return
 	}
 
@@ -195,7 +200,7 @@ func (sck *Socket) readMessage(conn *websocket.Conn) models.SocketMessage {
 	_, message, err := conn.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-			log.Printf("error: %v", err)
+			sck.l.Info("error: %v", err)
 		}
 		// break
 	}
@@ -204,7 +209,7 @@ func (sck *Socket) readMessage(conn *websocket.Conn) models.SocketMessage {
 	var m models.SocketMessage
 	err = json.Unmarshal(message, &m)
 	if err != nil {
-		log.Printf("error: %v", err)
+		sck.l.Error("error: %v", err)
 	}
 
 	fmt.Println("Messagge", m)
@@ -224,7 +229,7 @@ func (sck *Socket) insertClientInRooms(rooms []models.Room, client *Client) erro
 	for _, room := range rooms {
 		err := sck.hub.insertClientInRoom(client, room.ID)
 		if err != nil {
-			log.Println(err.Error())
+			sck.l.Error(err.Error())
 		}
 	}
 
