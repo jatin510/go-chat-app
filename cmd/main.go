@@ -51,7 +51,7 @@ func main() {
 	router := router.Init(controllers, l)
 
 	// init socket connection
-	socket.Init(router)
+	socket.Init(router, services)
 
 	port := "4000"
 

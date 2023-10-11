@@ -1,6 +1,10 @@
 package socket
 
-import "github.com/jatin510/go-chat-app/internal/models"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+)
 
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
@@ -17,7 +21,7 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
-	rooms map[models.CID][]*Client
+	rooms map[uuid.UUID][]*Client
 }
 
 func newHub() *Hub {
@@ -50,4 +54,16 @@ func (h *Hub) run() {
 			}
 		}
 	}
+}
+
+func (h *Hub) insertClientInRoom(client *Client, roomId uuid.UUID) error {
+	room := h.rooms[roomId]
+	for _, c := range room {
+		if c == client {
+			return errors.New("client not inserted, already in room")
+		}
+	}
+	room = append(room, client)
+	h.rooms[roomId] = room
+	return nil
 }

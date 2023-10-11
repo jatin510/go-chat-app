@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/jatin510/go-chat-app/internal/models"
+	"github.com/jatin510/go-chat-app/internal/services"
 	"github.com/jatin510/go-chat-app/internal/utils"
 )
 
@@ -48,7 +50,19 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	send chan []byte
 
-	userId models.CID
+	userId uuid.UUID
+}
+
+type Socket struct {
+	hub      *Hub
+	services *services.Services
+}
+
+func NewSocket(hub *Hub, services *services.Services) *Socket {
+	return &Socket{
+		hub:      hub,
+		services: services,
+	}
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -124,8 +138,8 @@ func (c *Client) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	userId, err := getUserIdFromRequest(r)
+func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
+	userId, err := sck.getUserIdFromRequest(r)
 	if err != nil {
 		// TODO: update to slog
 		log.Println(err.Error())
@@ -137,7 +151,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	// TODO: handle authentication
 	// token := r.URL.Query().Get("token")
 
-	// rooms, err := getUserRooms(userId)
+	rooms, err := sck.getUserRooms(userId)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -146,10 +160,16 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// user info from database
-	userId := getUserData(conn)
+	// userId := getUserData(conn)
 
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), userId: userId}
+	client := &Client{hub: sck.hub, conn: conn, send: make(chan []byte, 256), userId: userId}
 	client.hub.register <- client
+
+	err = sck.insertClientInRooms(rooms, client)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
@@ -157,21 +177,21 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-func getUserIdFromRequest(r *http.Request) (models.CID, error) {
+func (sck *Socket) getUserIdFromRequest(r *http.Request) (uuid.UUID, error) {
 	input := r.URL.Query().Get("userId")
 	if !utils.IsUUID(input) {
-		return models.CID{}, errors.New("invalid UUID")
+		return uuid.UUID{}, errors.New("invalid UUID")
 	}
 
-	userId := models.CID([]byte(input))
+	userId := uuid.UUID([]byte(input))
 	if len(userId) == 0 {
-		return models.CID{}, errors.New("userId is required")
+		return uuid.UUID{}, errors.New("userId is required")
 	}
 
 	return userId, nil
 }
 
-func readMessage(conn *websocket.Conn) models.SocketMessage {
+func (sck *Socket) readMessage(conn *websocket.Conn) models.SocketMessage {
 	_, message, err := conn.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -189,4 +209,24 @@ func readMessage(conn *websocket.Conn) models.SocketMessage {
 
 	fmt.Println("Messagge", m)
 	return m
+}
+
+func (sck *Socket) getUserRooms(userId uuid.UUID) ([]models.Room, error) {
+	rooms, err := sck.services.Room.GetAllRoomsByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
+}
+
+func (sck *Socket) insertClientInRooms(rooms []models.Room, client *Client) error {
+	for _, room := range rooms {
+		err := sck.hub.insertClientInRoom(client, room.ID)
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}
+
+	return nil
 }

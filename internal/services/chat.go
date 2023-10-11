@@ -1,12 +1,13 @@
 package services
 
 import (
+	"github.com/google/uuid"
 	"github.com/jatin510/go-chat-app/internal/models"
 	"github.com/jatin510/go-chat-app/internal/repository"
 )
 
 type ChatServiceInterface interface {
-	Send(msg string, roomId models.CID, userId models.CID) error
+	Send(msg string, roomId uuid.UUID, userId uuid.UUID) error
 }
 
 type ChatService struct {
@@ -21,7 +22,7 @@ func NewChatService(repo *repository.Repository, l models.Logger) ChatServiceInt
 	}
 }
 
-func (c ChatService) Send(m string, rId models.CID, userId models.CID) error {
+func (c ChatService) Send(m string, rId uuid.UUID, userId uuid.UUID) error {
 	c.l.Info("Sending a message")
 	return nil
 }
