@@ -1,6 +1,8 @@
 package models
 
-type CID int64
+import "github.com/google/uuid"
+
+type CID uuid.UUID
 
 type Logger interface {
 	Info(string, ...any)

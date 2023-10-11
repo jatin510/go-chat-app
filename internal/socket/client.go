@@ -3,6 +3,7 @@ package socket
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/jatin510/go-chat-app/internal/models"
+	"github.com/jatin510/go-chat-app/internal/utils"
 )
 
 const (
@@ -123,6 +125,20 @@ func (c *Client) writePump() {
 
 // serveWs handles websocket requests from the peer.
 func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	userId, err := getUserIdFromRequest(r)
+	if err != nil {
+		// TODO: update to slog
+		log.Println(err.Error())
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+	}
+
+	// TODO: handle authentication
+	// token := r.URL.Query().Get("token")
+
+	// rooms, err := getUserRooms(userId)
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -141,11 +157,21 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-type UserWSPayload struct {
-	UserId models.CID `json:"userId"`
+func getUserIdFromRequest(r *http.Request) (models.CID, error) {
+	input := r.URL.Query().Get("userId")
+	if !utils.IsUUID(input) {
+		return models.CID{}, errors.New("invalid UUID")
+	}
+
+	userId := models.CID([]byte(input))
+	if len(userId) == 0 {
+		return models.CID{}, errors.New("userId is required")
+	}
+
+	return userId, nil
 }
 
-func getUserData(conn *websocket.Conn) models.CID {
+func readMessage(conn *websocket.Conn) models.SocketMessage {
 	_, message, err := conn.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -155,12 +181,12 @@ func getUserData(conn *websocket.Conn) models.CID {
 	}
 	message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
-	var u UserWSPayload
-	err = json.Unmarshal(message, &u)
+	var m models.SocketMessage
+	err = json.Unmarshal(message, &m)
 	if err != nil {
 		log.Printf("error: %v", err)
 	}
 
-	fmt.Println("Messagge", u)
-	return u.UserId
+	fmt.Println("Messagge", m)
+	return m
 }
