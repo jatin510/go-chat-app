@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jatin510/go-chat-app/internal/models"
 )
 

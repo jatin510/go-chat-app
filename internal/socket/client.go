@@ -140,6 +140,8 @@ func (c *Client) writePump() {
 
 // serveWs handles websocket requests from the peer.
 func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
+	sck.l.Info("New websocket connection")
+
 	userId, err := sck.getUserIdFromRequest(r)
 	if err != nil {
 		// TODO: update to slog
@@ -155,7 +157,7 @@ func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
 	rooms, err := sck.getUserRooms(userId)
 	if err != nil {
 		// TODO: update to slog
-		sck.l.Error(err.Error())
+		sck.l.Error("error getting data", err.Error())
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -189,9 +191,6 @@ func (sck *Socket) getUserIdFromRequest(r *http.Request) (uuid.UUID, error) {
 	}
 
 	userId := uuid.UUID([]byte(input))
-	if len(userId) == 0 {
-		return uuid.UUID{}, errors.New("userId is required")
-	}
 
 	return userId, nil
 }
@@ -219,6 +218,7 @@ func (sck *Socket) readMessage(conn *websocket.Conn) models.SocketMessage {
 func (sck *Socket) getUserRooms(userId uuid.UUID) ([]models.Room, error) {
 	rooms, err := sck.services.Room.GetAllRoomsByUserId(userId)
 	if err != nil {
+		sck.l.Error("error in getALlRomsByUserId", err.Error())
 		return nil, err
 	}
 

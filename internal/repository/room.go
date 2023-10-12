@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jatin510/go-chat-app/internal/models"
 )
 
@@ -53,9 +53,10 @@ func (r room) FindAll(filter map[string]any) ([]models.Room, error) {
 func (r room) FindAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DBQueryTimeout)
 	defer cancel()
-	rows, err := r.db.Query(ctx, "SELECT * FROM rooms WHERE user_id = $1", userId, nil)
+	rows, err := r.db.Query(ctx, "SELECT * FROM rooms WHERE user_id = $1", userId)
 
 	if err != nil {
+		r.l.Error("error in FindAllRoomsByUserId query", err.Error())
 		return []models.Room{}, err
 	}
 

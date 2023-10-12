@@ -12,10 +12,8 @@ type logger struct {
 }
 
 func NewLogger() models.Logger {
-	opts := slog.HandlerOptions{
-		AddSource: true,
-	}
-	l := slog.New(slog.NewJSONHandler(os.Stdout, &opts))
+	opts := slog.HandlerOptions{}
+	l := slog.New(slog.NewTextHandler(os.Stdout, &opts))
 	return logger{l: l}
 }
 

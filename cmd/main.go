@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jatin510/go-chat-app/internal/controller"
 	"github.com/jatin510/go-chat-app/internal/db"
 	"github.com/jatin510/go-chat-app/internal/repository"
@@ -82,9 +82,11 @@ func main() {
 	defer func() {
 		// closing database connection
 		DB.Close(context.Background())
+		l.Info("Closed database connection pool")
 
 		// closing context
 		cancel()
+		l.Info("Closed server")
 	}()
 
 	if err := s.Shutdown(ctx); err != nil {
