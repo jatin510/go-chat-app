@@ -1,20 +1,24 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Message struct {
-	ID        CID       `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Text      string    `json:"text"`
 	RoomId    int64     `json:"roomId"`
-	User      CID       `json:"user"`
+	User      uuid.UUID `json:"user"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type Room struct {
-	ID        CID       `json:"id"`
-	Name      string    `json:"name"`
-	Users     []CID     `json:"users"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        uuid.UUID   `json:"id"`
+	Name      string      `json:"name"`
+	Users     []uuid.UUID `json:"users"`
+	CreatedAt time.Time   `json:"createdAt"`
+	UpdatedAt time.Time   `json:"updatedAt"`
 }

@@ -1,8 +1,14 @@
 package repository
 
 import (
-	"github.com/jackc/pgx/v4"
+	"time"
+
+	"github.com/jackc/pgx/v5"
 	"github.com/jatin510/go-chat-app/internal/models"
+)
+
+const (
+	DBQueryTimeout = 10 * time.Second
 )
 
 type Repository struct {

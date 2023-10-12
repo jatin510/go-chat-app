@@ -2,11 +2,17 @@ package socket
 
 import (
 	"bytes"
-	"log"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/jatin510/go-chat-app/internal/models"
+	"github.com/jatin510/go-chat-app/internal/services"
+	"github.com/jatin510/go-chat-app/internal/utils"
 )
 
 const (
@@ -42,6 +48,22 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	userId uuid.UUID
+}
+
+type Socket struct {
+	hub      *Hub
+	services *services.Services
+	l        models.Logger
+}
+
+func NewSocket(hub *Hub, services *services.Services, l models.Logger) *Socket {
+	return &Socket{
+		hub:      hub,
+		services: services,
+		l:        l,
+	}
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -61,7 +83,7 @@ func (c *Client) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				fmt.Printf("error: %v\n", err)
 			}
 			break
 		}
@@ -117,17 +139,99 @@ func (c *Client) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
+	sck.l.Info("New websocket connection")
+
+	userId, err := sck.getUserIdFromRequest(r)
 	if err != nil {
-		log.Println(err)
+		// TODO: update to slog
+		sck.l.Error(err.Error())
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+
+	// TODO: handle authentication
+	// token := r.URL.Query().Get("token")
+
+	rooms, err := sck.getUserRooms(userId)
+	if err != nil {
+		// TODO: update to slog
+		sck.l.Error("error getting data", err.Error())
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		sck.l.Error(err.Error())
+		return
+	}
+
+	// user info from database
+	// userId := getUserData(conn)
+
+	client := &Client{hub: sck.hub, conn: conn, send: make(chan []byte, 256), userId: userId}
 	client.hub.register <- client
+
+	err = sck.insertClientInRooms(rooms, client)
+	if err != nil {
+		sck.l.Error(err.Error())
+		return
+	}
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
 	go client.readPump()
+}
+
+func (sck *Socket) getUserIdFromRequest(r *http.Request) (uuid.UUID, error) {
+	input := r.URL.Query().Get("userId")
+	if !utils.IsUUID(input) {
+		return uuid.UUID{}, errors.New("invalid UUID")
+	}
+
+	userId := uuid.UUID([]byte(input))
+
+	return userId, nil
+}
+
+func (sck *Socket) readMessage(conn *websocket.Conn) models.SocketMessage {
+	_, message, err := conn.ReadMessage()
+	if err != nil {
+		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			sck.l.Info("error: %v", err)
+		}
+		// break
+	}
+	message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+
+	var m models.SocketMessage
+	err = json.Unmarshal(message, &m)
+	if err != nil {
+		sck.l.Error("error: %v", err)
+	}
+
+	fmt.Println("Messagge", m)
+	return m
+}
+
+func (sck *Socket) getUserRooms(userId uuid.UUID) ([]models.Room, error) {
+	rooms, err := sck.services.Room.GetAllRoomsByUserId(userId)
+	if err != nil {
+		sck.l.Error("error in getALlRomsByUserId", err.Error())
+		return nil, err
+	}
+
+	return rooms, nil
+}
+
+func (sck *Socket) insertClientInRooms(rooms []models.Room, client *Client) error {
+	for _, room := range rooms {
+		err := sck.hub.insertClientInRoom(client, room.ID)
+		if err != nil {
+			sck.l.Error(err.Error())
+		}
+	}
+
+	return nil
 }

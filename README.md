@@ -4,3 +4,7 @@
 
 # Flow Diagram
 ![flow](./screenshot/go-chat-app.drawio.png)
+
+
+// client <- userId           <- user is online
+// hub <- roomId[ []client ]  <- join room

@@ -1,17 +1,18 @@
 package repository
 
 import (
-	"github.com/jackc/pgx/v4"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jatin510/go-chat-app/internal/models"
 )
 
 type MessageRepoInterface interface {
-	create(models.Message) (models.Message, error)
-	update(models.Message) (models.Message, error)
-	delete(models.CID) error
-	findOne(any) (models.Message, error)
-	findAll(any) ([]models.Message, error)
-	count(any) (int, error)
+	Create(models.Message) (models.Message, error)
+	Update(models.Message) (models.Message, error)
+	Delete(uuid.UUID) error
+	FindOne(any) (models.Message, error)
+	FindAll(any) ([]models.Message, error)
+	Count(any) (int, error)
 }
 
 type message struct {
@@ -26,26 +27,26 @@ func NewMessageRepo(db *pgx.Conn, l models.Logger) MessageRepoInterface {
 	}
 }
 
-func (m message) create(message models.Message) (models.Message, error) {
+func (m message) Create(message models.Message) (models.Message, error) {
 	return models.Message{}, nil
 }
 
-func (m message) update(message models.Message) (models.Message, error) {
+func (m message) Update(message models.Message) (models.Message, error) {
 	return models.Message{}, nil
 }
 
-func (m message) delete(id models.CID) error {
+func (m message) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (m message) findOne(filter any) (models.Message, error) {
+func (m message) FindOne(filter any) (models.Message, error) {
 	return models.Message{}, nil
 }
 
-func (m message) findAll(filter any) ([]models.Message, error) {
+func (m message) FindAll(filter any) ([]models.Message, error) {
 	return []models.Message{}, nil
 }
 
-func (m message) count(filter any) (int, error) {
+func (m message) Count(filter any) (int, error) {
 	return 0, nil
 }

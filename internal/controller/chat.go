@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/jatin510/go-chat-app/internal/models"
 	"github.com/jatin510/go-chat-app/internal/services"
 )
@@ -25,9 +26,9 @@ func NewChatController(services *services.Services, l models.Logger) ChatControl
 }
 
 type PostChatPayload struct {
-	Message string     `json:"message"`
-	RoomId  models.CID `json:"roomId"`
-	UserId  models.CID `json:"userId"`
+	Message string    `json:"message"`
+	RoomId  uuid.UUID `json:"roomId"`
+	UserId  uuid.UUID `json:"userId"`
 }
 
 func (c ChatController) Send(rw http.ResponseWriter, r *http.Request) error {

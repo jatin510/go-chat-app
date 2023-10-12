@@ -1,17 +1,21 @@
 package repository
 
 import (
-	"github.com/jackc/pgx/v4"
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jatin510/go-chat-app/internal/models"
 )
 
 type RoomRepoInterface interface {
-	create(models.Room) (models.Room, error)
-	update(models.Room) (models.Room, error)
-	delete(models.CID) error
-	findOne(any) (models.Room, error)
-	findAll(any) ([]models.Room, error)
-	count(any) (int, error)
+	Create(room models.Room) (models.Room, error)
+	Update(room models.Room) (models.Room, error)
+	Delete(room uuid.UUID) error
+	FindOne(filter map[string]any) (models.Room, error)
+	FindAll(filter map[string]any) ([]models.Room, error)
+	FindAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error)
+	Count(filter map[string]any) (int, error)
 }
 
 type room struct {
@@ -26,26 +30,53 @@ func NewRoomRepo(db *pgx.Conn, l models.Logger) RoomRepoInterface {
 	}
 }
 
-func (r room) create(room models.Room) (models.Room, error) {
+func (r room) Create(room models.Room) (models.Room, error) {
 	return models.Room{}, nil
 }
 
-func (r room) update(room models.Room) (models.Room, error) {
+func (r room) Update(room models.Room) (models.Room, error) {
 	return models.Room{}, nil
 }
 
-func (r room) delete(id models.CID) error {
+func (r room) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (r room) findOne(filter any) (models.Room, error) {
+func (r room) FindOne(filter map[string]any) (models.Room, error) {
 	return models.Room{}, nil
 }
 
-func (r room) findAll(filter any) ([]models.Room, error) {
+func (r room) FindAll(filter map[string]any) ([]models.Room, error) {
 	return []models.Room{}, nil
 }
 
-func (r room) count(filter any) (int, error) {
+func (r room) FindAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DBQueryTimeout)
+	defer cancel()
+	rows, err := r.db.Query(ctx, "SELECT * FROM rooms WHERE user_id = $1", userId)
+
+	if err != nil {
+		r.l.Error("error in FindAllRoomsByUserId query", err.Error())
+		return []models.Room{}, err
+	}
+
+	defer rows.Close()
+
+	var rooms []models.Room
+	for rows.Next() {
+		var room models.Room
+
+		err := rows.Scan(&room)
+		if err != nil {
+			return []models.Room{}, err
+		}
+
+		rooms = append(rooms, room)
+	}
+
+	return rooms, nil
+}
+
+func (r room) Count(filter map[string]any) (int, error) {
 	return 0, nil
 }
