@@ -2,14 +2,12 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"log/slog"
 	"os"
-	"time"
+	"path/filepath"
+	"strings"
 
 	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jatin510/go-chat-app/internal/models"
 )
@@ -20,6 +18,7 @@ func Init(l models.Logger) *pgx.Conn {
 	if err != nil {
 		log.Fatal(err)
 	}
+	config.Database = os.Getenv("DATABASE_NAME")
 	config.RuntimeParams["application_name"] = "$ docs_simplecrud_gopgx"
 	conn, err := pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
@@ -43,6 +42,10 @@ func Init(l models.Logger) *pgx.Conn {
 		return initTable(context.Background(), tx)
 	})
 
+	if err != nil {
+		panic(err)
+	}
+
 	l.Info("DB connected successfully")
 
 	return conn
@@ -50,25 +53,23 @@ func Init(l models.Logger) *pgx.Conn {
 
 func initTable(ctx context.Context, tx pgx.Tx) error {
 
-	id, _ := uuid.Parse("1089114a-74df-4fd0-ae88-13e7669ea881")
+	path, err := filepath.Abs("./internal/db/init.sql")
+	if err != nil {
+		panic(err)
+	}
 
-	_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS rooms")
+	c, ioErr := os.ReadFile(path)
+	if ioErr != nil {
+		panic(ioErr)
+	}
+	sql := string(c)
+
+	sql = strings.ReplaceAll(sql, "DB_NAME", os.Getenv("DATABASE_NAME"))
+
+	_, err = tx.Exec(ctx, sql)
 	if err != nil {
-		slog.Error("failed to drop rooms table", err)
 		panic(err)
 	}
-	r, err := tx.Exec(ctx, "CREATE TABLE rooms (id UUID PRIMARY KEY, name TEXT NOT NULL, user_id uuid, created_at timestamptz NOT NULL, updated_at timestamp)")
-	if err != nil {
-		slog.Error("failed to create rooms table", err)
-		panic(err)
-	}
-	fmt.Println(r)
-	r, err = tx.Exec(ctx, "INSERT INTO rooms VALUES ($1,$2,$3,$4,$5)", id, "room1", uuid.New(), time.Now(), time.Now())
-	if err != nil {
-		slog.Error("failed to insert into rooms table", err)
-		panic(err)
-	}
-	fmt.Println(r)
 
 	return nil
 }
