@@ -20,7 +20,11 @@ func Init(controller *controller.Controllers, l models.Logger) *mux.Router {
 
 	_ = router.PathPrefix("/chat").Subrouter()
 	_ = router.PathPrefix("/user").Subrouter()
-	_ = router.PathPrefix("/room").Subrouter()
+	roomRouter := router.PathPrefix("/room").Subrouter()
+
+	roomRouter.HandleFunc("", controller.Room.Create).Methods(http.MethodPost)
+	roomRouter.HandleFunc("", controller.Room.GetAll).Methods(http.MethodGet)
+	roomRouter.HandleFunc("/:id/join", controller.Room.Join).Methods(http.MethodPut)
 
 	return router
 }

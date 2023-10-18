@@ -1,12 +1,15 @@
 package services
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jatin510/go-chat-app/internal/models"
 	"github.com/jatin510/go-chat-app/internal/repository"
 )
 
 type RoomServiceInterface interface {
+	Create(name string) (models.Room, error)
 	GetAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error)
 }
 
@@ -22,11 +25,32 @@ func NewRoomService(repo *repository.Repository, l models.Logger) RoomServiceInt
 	}
 }
 
-func (c RoomService) GetAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error) {
-	c.l.Info("Fetching rooms of the user: " + userId.String())
+func (r RoomService) Create(name string) (models.Room, error) {
+	r.l.Info("Creating room " + name)
+
+	// TODO: check if room already exists with given name
+
+	t := time.Now()
+	room := models.Room{
+		ID:        uuid.New(),
+		Name:      name,
+		CreatedAt: t,
+		UpdatedAt: t,
+	}
+
+	room, err := r.repo.Room.Create(room)
+	if err != nil {
+		return models.Room{}, err
+	}
+
+	return room, nil
+}
+
+func (r RoomService) GetAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error) {
+	r.l.Info("Fetching rooms of the user: " + userId.String())
 	var rooms []models.Room
 
-	rooms, err := c.repo.Room.FindAllRoomsByUserId(userId)
+	rooms, err := r.repo.Room.FindAllRoomsByUserId(userId)
 	if err != nil {
 		return nil, err
 	}
