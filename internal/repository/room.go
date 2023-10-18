@@ -31,7 +31,15 @@ func NewRoomRepo(db *pgx.Conn, l models.Logger) RoomRepoInterface {
 }
 
 func (r room) Create(room models.Room) (models.Room, error) {
-	return models.Room{}, nil
+	ctx, cancel := context.WithTimeout(context.Background(), DBQueryTimeout)
+	defer cancel()
+	_, err := r.db.Query(ctx, "INSERT INTO rooms VALUES ($1,$2,$3,$4)", room.ID, room.Name, room.CreatedAt, room.UpdatedAt)
+	if err != nil {
+		r.l.Error("error in Create room query", err.Error())
+		return models.Room{}, err
+	}
+
+	return room, nil
 }
 
 func (r room) Update(room models.Room) (models.Room, error) {
