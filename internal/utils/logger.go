@@ -11,9 +11,12 @@ type logger struct {
 	l *slog.Logger
 }
 
+var globalLogger *slog.Logger
+
 func NewLogger() models.Logger {
 	opts := slog.HandlerOptions{}
 	l := slog.New(slog.NewTextHandler(os.Stdout, &opts))
+	globalLogger = l
 	return logger{l: l}
 }
 

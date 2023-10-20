@@ -11,6 +11,7 @@ import (
 type RoomServiceInterface interface {
 	Create(name string) (models.Room, error)
 	GetAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error)
+	GetAll() ([]models.Room, error)
 }
 
 type RoomService struct {
@@ -40,6 +41,7 @@ func (r RoomService) Create(name string) (models.Room, error) {
 
 	room, err := r.repo.Room.Create(room)
 	if err != nil {
+		r.l.Error("error in create room ", err.Error())
 		return models.Room{}, err
 	}
 
@@ -51,6 +53,18 @@ func (r RoomService) GetAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error
 	var rooms []models.Room
 
 	rooms, err := r.repo.Room.FindAllRoomsByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
+}
+
+func (r RoomService) GetAll() ([]models.Room, error) {
+	var rooms []models.Room
+	var filter = make(map[string]any)
+
+	rooms, err := r.repo.Room.FindAll(filter)
 	if err != nil {
 		return nil, err
 	}
