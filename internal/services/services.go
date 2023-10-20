@@ -6,15 +6,17 @@ import (
 )
 
 type Services struct {
-	Chat ChatServiceInterface
-	Room RoomServiceInterface
-	User UserServiceInterface
+	Chat         ChatServiceInterface
+	Room         RoomServiceInterface
+	User         UserServiceInterface
+	Subscription SubscriptionInterface
 }
 
 func Init(repo *repository.Repository, l models.Logger) *Services {
 	return &Services{
-		Chat: NewChatService(repo, l),
-		Room: NewRoomService(repo, l),
-		User: NewUserService(repo, l),
+		Chat:         NewChatService(repo, l),
+		Room:         NewRoomService(repo, l),
+		User:         NewUserService(repo, l),
+		Subscription: NewSubscriptionService(repo, l),
 	}
 }
