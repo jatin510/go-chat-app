@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -99,6 +100,9 @@ func (rc RoomController) Join(rw http.ResponseWriter, r *http.Request) {
 		utils.SendHttpResponse(rw, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	query := fmt.Sprintf("?userId=%v&roomId=%v", sub.UserId, sub.RoomId)
+	rc.services.Rest.Get("http://localhost:4000/ws/join-room" + query)
 
 	utils.SendHttpResponse(rw, http.StatusOK, sub)
 }

@@ -184,13 +184,49 @@ func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
+func (sck *Socket) JoinRoom(rw http.ResponseWriter, r *http.Request) {
+	roomId := r.URL.Query().Get("roomId")
+	userId := r.URL.Query().Get("userId")
+
+	sck.l.Info("JoinRoom... joining room: " + roomId + " and user: " + userId)
+
+	if !utils.IsUUID(roomId) || !utils.IsUUID(userId) {
+		sck.l.Error("invalid room/user id")
+		utils.SendHttpResponse(rw, http.StatusInternalServerError, "invalid room/user id")
+		return
+	}
+
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		sck.l.Error("unable to convert provided room id to UUID", err)
+		utils.SendHttpResponse(rw, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	userUUID, err := uuid.Parse(userId)
+	if err != nil {
+		sck.l.Error("unable to convert provided user id to UUID", err)
+		utils.SendHttpResponse(rw, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	sck.hub.AddUserToRoom(userUUID, roomUUID)
+}
+
 func (sck *Socket) getUserIdFromRequest(r *http.Request) (uuid.UUID, error) {
 	input := r.URL.Query().Get("userId")
+	fmt.Println("input: ", input)
 	if !utils.IsUUID(input) {
 		return uuid.UUID{}, errors.New("invalid UUID")
 	}
 
-	userId := uuid.UUID([]byte(input))
+	userId, err := uuid.Parse(input)
+
+	if err != nil {
+		sck.l.Error("unable to convert provided room id to UUID", err)
+		return uuid.UUID{}, err
+	}
+	fmt.Println("userId: ", userId)
 
 	return userId, nil
 }

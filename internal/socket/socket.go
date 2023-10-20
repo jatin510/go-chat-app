@@ -33,4 +33,8 @@ func Init(router *mux.Router, services *services.Services, l models.Logger) {
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		socket.ServeWs(w, r)
 	})
+	router.HandleFunc("/ws/join-room", func(w http.ResponseWriter, r *http.Request) {
+		socket.l.Info("socket... joining room and user")
+		socket.JoinRoom(w, r)
+	})
 }

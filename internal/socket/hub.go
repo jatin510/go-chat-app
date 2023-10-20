@@ -2,6 +2,7 @@ package socket
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -30,6 +31,7 @@ func newHub() *Hub {
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
+		rooms:      make(map[uuid.UUID][]*Client),
 	}
 }
 
@@ -56,8 +58,23 @@ func (h *Hub) run() {
 	}
 }
 
+func (h *Hub) AddUserToRoom(userId uuid.UUID, roomId uuid.UUID) error {
+	client, err := h.getClientByUserId(userId)
+	if err != nil {
+		return err
+	}
+	return h.insertClientInRoom(client, roomId)
+}
+
 func (h *Hub) insertClientInRoom(client *Client, roomId uuid.UUID) error {
-	room := h.rooms[roomId]
+	fmt.Println("insertClientInRoom called")
+	room, ok := h.rooms[roomId]
+	if !ok {
+		h.rooms[roomId] = []*Client{}
+		room = h.rooms[roomId]
+	}
+	fmt.Println("rooms before", h.rooms)
+
 	for _, c := range room {
 		if c == client {
 			return errors.New("client not inserted, already in room")
@@ -65,5 +82,17 @@ func (h *Hub) insertClientInRoom(client *Client, roomId uuid.UUID) error {
 	}
 	room = append(room, client)
 	h.rooms[roomId] = room
+
+	fmt.Println("hub clients: ", h.clients)
+	fmt.Println("hub rooms: ", h.rooms)
 	return nil
+}
+
+func (h *Hub) getClientByUserId(userId uuid.UUID) (*Client, error) {
+	for c := range h.clients {
+		if c.userId == userId {
+			return c, nil
+		}
+	}
+	return nil, errors.New("client not found for user ID: " + userId.String())
 }
