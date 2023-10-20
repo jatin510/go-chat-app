@@ -19,8 +19,11 @@ func Init(controller *controller.Controllers, l models.Logger) *mux.Router {
 	// restRouter.Use(authMiddlware)
 
 	_ = router.PathPrefix("/chat").Subrouter()
-	_ = router.PathPrefix("/user").Subrouter()
+	userRouter := router.PathPrefix("/user").Subrouter()
 	roomRouter := router.PathPrefix("/room").Subrouter()
+
+	userRouter.HandleFunc("/signup", controller.User.Create).Methods(http.MethodPost)
+	userRouter.HandleFunc("/login", controller.User.Login).Methods(http.MethodPost)
 
 	roomRouter.HandleFunc("", controller.Room.Create).Methods(http.MethodPost)
 	roomRouter.HandleFunc("", controller.Room.GetAll).Methods(http.MethodGet)

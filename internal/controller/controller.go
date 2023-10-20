@@ -8,11 +8,13 @@ import (
 type Controllers struct {
 	Chat ChatControllerInterface
 	Room RoomControllerInterface
+	User UserControllerInterface
 }
 
 func Init(services *services.Services, l models.Logger) *Controllers {
 	return &Controllers{
 		Chat: NewChatController(services, l),
 		Room: NewRoomController(services, l),
+		User: NewUserController(services, l),
 	}
 }

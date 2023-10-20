@@ -8,11 +8,13 @@ import (
 type Services struct {
 	Chat ChatServiceInterface
 	Room RoomServiceInterface
+	User UserServiceInterface
 }
 
 func Init(repo *repository.Repository, l models.Logger) *Services {
 	return &Services{
 		Chat: NewChatService(repo, l),
 		Room: NewRoomService(repo, l),
+		User: NewUserService(repo, l),
 	}
 }
