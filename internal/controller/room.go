@@ -6,6 +6,7 @@ import (
 
 	"github.com/jatin510/go-chat-app/internal/models"
 	"github.com/jatin510/go-chat-app/internal/services"
+	"github.com/jatin510/go-chat-app/internal/utils"
 )
 
 type RoomControllerInterface interface {
@@ -26,14 +27,8 @@ func NewRoomController(services *services.Services, l models.Logger) RoomControl
 	}
 }
 
-// type PostRoomPayload struct {
-// 	Message string    `json:"message"`
-// 	RoomId  uuid.UUID `json:"roomId"`
-// 	UserId  uuid.UUID `json:"userId"`
-// }
-
 func (rc RoomController) Create(rw http.ResponseWriter, r *http.Request) {
-	var room *models.Room
+	var room models.Room
 
 	err := json.NewDecoder(r.Body).Decode(&room)
 	if err != nil {
@@ -43,39 +38,27 @@ func (rc RoomController) Create(rw http.ResponseWriter, r *http.Request) {
 		// return err
 	}
 
-	// c.services.Chat.Send(p.Message, p.RoomId, p.UserId)
-	rc.services.Room.Create(room.Name)
-	rw.WriteHeader(http.StatusCreated)
+	room, err = rc.services.Room.Create(room.Name)
+	if err != nil {
+		rc.l.Error("error in create room ", err.Error())
+	}
 
-	// return nil
+	utils.SendHttpResponse(rw, http.StatusCreated, room)
 }
 
 func (rc RoomController) GetAll(rw http.ResponseWriter, r *http.Request) {
-	// var p *PostChatPayload
 
-	// err := json.NewDecoder(r.Body).Decode(&p)
-	// if err != nil {
-	// 	// handle error
-	// 	rc.l.Error("error in unmarshalling postchat payload", err)
-	// 	return err
-	// }
+	rooms, err := rc.services.Room.GetAll()
+	if err != nil {
+		// handle error
+		rc.l.Error("error in getting all rooms", err)
+		// TODO write error
+		// return err
+	}
 
-	// c.services.Chat.Send(p.Message, p.RoomId, p.UserId)
-
-	// return nil
+	utils.SendHttpResponse(rw, http.StatusOK, rooms)
 }
 
 func (rc RoomController) Join(rw http.ResponseWriter, r *http.Request) {
-	// var p *PostChatPayload
 
-	// err := json.NewDecoder(r.Body).Decode(&p)
-	// if err != nil {
-	// 	// handle error
-	// 	rc.l.Error("error in unmarshalling postchat payload", err)
-	// 	return err
-	// }
-
-	// c.services.Chat.Send(p.Message, p.RoomId, p.UserId)
-
-	// return nil
 }

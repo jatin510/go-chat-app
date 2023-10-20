@@ -56,7 +56,29 @@ func (r room) FindOne(filter map[string]any) (models.Room, error) {
 }
 
 func (r room) FindAll(filter map[string]any) ([]models.Room, error) {
-	return []models.Room{}, nil
+	ctx, cancel := context.WithTimeout(context.Background(), DBQueryTimeout)
+	defer cancel()
+
+	rows, err := r.db.Query(ctx, "SELECT id, name, created_at, updated_at FROM rooms")
+	if err != nil {
+		r.l.Error("error in find all query", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rooms []models.Room
+	for rows.Next() {
+		var room models.Room
+
+		err := rows.Scan(&room.ID, &room.Name, &room.CreatedAt, &room.UpdatedAt)
+		if err != nil {
+			return []models.Room{}, err
+		}
+
+		rooms = append(rooms, room)
+	}
+
+	return rooms, nil
 }
 
 func (r room) FindAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error) {
