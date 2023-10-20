@@ -27,7 +27,7 @@ func Init(controller *controller.Controllers, l models.Logger) *mux.Router {
 
 	roomRouter.HandleFunc("", controller.Room.Create).Methods(http.MethodPost)
 	roomRouter.HandleFunc("", controller.Room.GetAll).Methods(http.MethodGet)
-	roomRouter.HandleFunc("/:id/join", controller.Room.Join).Methods(http.MethodPut)
+	roomRouter.HandleFunc("/{roomId}/join", controller.Room.Join).Methods(http.MethodPost)
 
 	return router
 }
