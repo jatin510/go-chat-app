@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/jatin510/go-chat-app/internal/models"
 	"github.com/jatin510/go-chat-app/internal/services"
+	"github.com/jatin510/go-chat-app/internal/utils/consumers/socket_consumer"
 )
 
 type Controllers struct {
@@ -17,4 +18,8 @@ func Init(services *services.Services, l models.Logger) *Controllers {
 		Room: NewRoomController(services, l),
 		User: NewUserController(services, l),
 	}
+}
+
+func (c *Controllers) InitSocketConsumer(socketConsumer socket_consumer.SocketConsumer) {
+	c.Room.InitSocketConsumer(socketConsumer)
 }

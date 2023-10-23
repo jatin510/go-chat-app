@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/jatin510/go-chat-app/internal/models"
-	"github.com/jatin510/go-chat-app/internal/services"
 	"github.com/jatin510/go-chat-app/internal/utils"
+	"github.com/jatin510/go-chat-app/internal/utils/consumers/service_consumer"
 )
 
 const (
@@ -53,16 +53,16 @@ type Client struct {
 }
 
 type Socket struct {
-	hub      *Hub
-	services *services.Services
-	l        models.Logger
+	hub             *Hub
+	l               models.Logger
+	serviceconsumer *service_consumer.ServiceConsumer
 }
 
-func NewSocket(hub *Hub, services *services.Services, l models.Logger) *Socket {
+func NewSocket(hub *Hub, serviceconsumer *service_consumer.ServiceConsumer, l models.Logger) *Socket {
 	return &Socket{
-		hub:      hub,
-		services: services,
-		l:        l,
+		hub:             hub,
+		serviceconsumer: serviceconsumer,
+		l:               l,
 	}
 }
 
@@ -184,7 +184,7 @@ func (sck *Socket) ServeWs(w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-func (sck *Socket) JoinRoom(rw http.ResponseWriter, r *http.Request) {
+func (sck *Socket) JoinRoomHandler(rw http.ResponseWriter, r *http.Request) {
 	roomId := r.URL.Query().Get("roomId")
 	userId := r.URL.Query().Get("userId")
 
@@ -210,7 +210,11 @@ func (sck *Socket) JoinRoom(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sck.hub.AddUserToRoom(userUUID, roomUUID)
+	sck.JoinRoom(userUUID, roomUUID)
+}
+
+func (sck *Socket) JoinRoom(userId uuid.UUID, roomId uuid.UUID) error {
+	return sck.hub.AddUserToRoom(userId, roomId)
 }
 
 func (sck *Socket) getUserIdFromRequest(r *http.Request) (uuid.UUID, error) {
@@ -251,14 +255,38 @@ func (sck *Socket) readMessage(conn *websocket.Conn) models.SocketMessage {
 	return m
 }
 
-func (sck *Socket) getUserRooms(userId uuid.UUID) ([]models.Room, error) {
-	rooms, err := sck.services.Room.GetAllRoomsByUserId(userId)
-	if err != nil {
-		sck.l.Error("error in getALlRomsByUserId", err.Error())
-		return nil, err
-	}
+// coordinator.handle("getAllRoomsByUserId", userId)
 
-	return rooms, nil
+func (sck *Socket) getUserRooms(userId uuid.UUID) ([]models.Room, error) {
+	// TODO: use coordinator pubsub service
+	// Coordinator.publish("getAllRoomsByUserId", payload)
+
+	write := make(chan interface{})
+	p := models.Payload{
+		Event: utils.GET_ALL_ROOMS_BY_USERID,
+		Data:  userId,
+		Write: write,
+	}
+	go func() {
+		sck.serviceconsumer.Job <- p
+	}()
+
+	rooms := <-write
+
+	if rooms == nil {
+		return []models.Room{}, errors.New("no rooms found")
+	}
+	rooms = rooms.([]models.Room)
+	fmt.Println("socket getUserRooms() ", rooms)
+	return rooms.([]models.Room), nil
+
+	// rooms, err := sck.services.Room.GetAllRoomsByUserId(userId)
+	// if err != nil {
+	// 	sck.l.Error("error in getALlRomsByUserId", err.Error())
+	// 	return nil, err
+	// }
+
+	// return rooms, nil
 }
 
 func (sck *Socket) insertClientInRooms(rooms []models.Room, client *Client) error {

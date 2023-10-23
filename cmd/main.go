@@ -18,6 +18,8 @@ import (
 	"github.com/jatin510/go-chat-app/internal/services"
 	"github.com/jatin510/go-chat-app/internal/socket"
 	"github.com/jatin510/go-chat-app/internal/utils"
+	"github.com/jatin510/go-chat-app/internal/utils/consumers/service_consumer"
+	"github.com/jatin510/go-chat-app/internal/utils/consumers/socket_consumer"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
@@ -44,6 +46,9 @@ func main() {
 	// init services
 	services := services.Init(repo, l)
 
+	serviceconsumer := service_consumer.NewServiceConsumer(services)
+	go serviceconsumer.Init()
+
 	// init controller
 	controllers := controller.Init(services, l)
 
@@ -51,7 +56,12 @@ func main() {
 	router := router.Init(controllers, l)
 
 	// init socket connection
-	socket.Init(router, services, l)
+	sck := socket.Init(router, serviceconsumer, l)
+
+	socketconsumer := socket_consumer.NewSocketConsumer(sck)
+	go socketconsumer.Init()
+
+	controllers.InitSocketConsumer(*socketconsumer)
 
 	port := "4000"
 
