@@ -10,6 +10,7 @@ type Services struct {
 	Room         RoomServiceInterface
 	User         UserServiceInterface
 	Subscription SubscriptionInterface
+	Rest         RestServiceInterface
 }
 
 func Init(repo *repository.Repository, l models.Logger) *Services {
@@ -18,5 +19,6 @@ func Init(repo *repository.Repository, l models.Logger) *Services {
 		Room:         NewRoomService(repo, l),
 		User:         NewUserService(repo, l),
 		Subscription: NewSubscriptionService(repo, l),
+		Rest:         NewRestService(l),
 	}
 }

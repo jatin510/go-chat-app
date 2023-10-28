@@ -84,7 +84,7 @@ func (r room) FindAll(filter map[string]any) ([]models.Room, error) {
 func (r room) FindAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DBQueryTimeout)
 	defer cancel()
-	rows, err := r.db.Query(ctx, "SELECT * FROM rooms WHERE user_id = $1", userId)
+	rows, err := r.db.Query(ctx, "SELECT DISTINCT r.id AS id FROM rooms AS r, subscriptions AS s WHERE s.user_id = $1 AND r.id = s.room_id", userId)
 
 	if err != nil {
 		r.l.Error("error in FindAllRoomsByUserId query", err.Error())
@@ -97,7 +97,7 @@ func (r room) FindAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error) {
 	for rows.Next() {
 		var room models.Room
 
-		err := rows.Scan(&room)
+		err := rows.Scan(&room.ID)
 		if err != nil {
 			return []models.Room{}, err
 		}

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -9,17 +10,21 @@ import (
 	"github.com/jatin510/go-chat-app/internal/models"
 	"github.com/jatin510/go-chat-app/internal/services"
 	"github.com/jatin510/go-chat-app/internal/utils"
+	"github.com/jatin510/go-chat-app/internal/utils/consumers/socket_consumer"
 )
 
 type RoomControllerInterface interface {
 	Create(http.ResponseWriter, *http.Request)
 	GetAll(http.ResponseWriter, *http.Request)
 	Join(http.ResponseWriter, *http.Request)
+
+	InitSocketConsumer(socket_consumer.SocketConsumer)
 }
 
 type RoomController struct {
-	l        models.Logger
-	services *services.Services
+	l              models.Logger
+	services       *services.Services
+	socketConsumer socket_consumer.SocketConsumer
 }
 
 func NewRoomController(services *services.Services, l models.Logger) RoomControllerInterface {
@@ -27,6 +32,10 @@ func NewRoomController(services *services.Services, l models.Logger) RoomControl
 		l:        l,
 		services: services,
 	}
+}
+
+func (rc *RoomController) InitSocketConsumer(socketConsumer socket_consumer.SocketConsumer) {
+	rc.socketConsumer = socketConsumer
 }
 
 func (rc RoomController) Create(rw http.ResponseWriter, r *http.Request) {
@@ -99,6 +108,23 @@ func (rc RoomController) Join(rw http.ResponseWriter, r *http.Request) {
 		utils.SendHttpResponse(rw, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	write := make(chan interface{})
+	p := models.Payload{
+		Event: utils.JOIN_ROOM,
+		Data: socket_consumer.JoinRoomPayload{
+			UserId: sub.UserId,
+			RoomId: sub.RoomId,
+		},
+		Write: write,
+	}
+	go func() {
+		rc.socketConsumer.Job <- p
+	}()
+
+	e := <-write
+	e = e.(error)
+	fmt.Println(e)
 
 	utils.SendHttpResponse(rw, http.StatusOK, sub)
 }

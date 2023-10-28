@@ -5,15 +5,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jatin510/go-chat-app/internal/models"
-	"github.com/jatin510/go-chat-app/internal/services"
+	"github.com/jatin510/go-chat-app/internal/utils/consumers/service_consumer"
 )
 
-func Init(router *mux.Router, services *services.Services, l models.Logger) {
+func Init(router *mux.Router, serviceconsumer *service_consumer.ServiceConsumer, l models.Logger) *Socket {
 
 	hub := newHub()
 	go hub.run()
 
-	socket := NewSocket(hub, services, l)
+	socket := NewSocket(hub, serviceconsumer, l)
 
 	// router.HandleFunc("/ws/register", func(w http.ResponseWriter, r *http.Request) {
 	// 	// userId
@@ -33,4 +33,10 @@ func Init(router *mux.Router, services *services.Services, l models.Logger) {
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		socket.ServeWs(w, r)
 	})
+	router.HandleFunc("/ws/join-room", func(w http.ResponseWriter, r *http.Request) {
+		socket.l.Info("socket... joining room and user")
+		socket.JoinRoomHandler(w, r)
+	})
+
+	return socket
 }
