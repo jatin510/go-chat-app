@@ -3,6 +3,7 @@ package utils
 // SOCKET CONSUMER EVENTS
 const (
 	JOIN_ROOM = "joinRoom"
+	SEND_MSG  = "sendMessage"
 )
 
 // SERVICES CONSUMER EVENTS

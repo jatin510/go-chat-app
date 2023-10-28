@@ -32,7 +32,6 @@ func NewMessageRepo(db *pgx.Conn, l models.Logger) MessageRepoInterface {
 func (m message) Create(message models.Message) (models.Message, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DBQueryTimeout)
 	defer cancel()
-	m.l.Info("msg models", message)
 	rows, err := m.db.Query(ctx, "INSERT INTO messages VALUES ($1,$2,$3,$4,$5,$6)", message.ID, message.Msg, message.RoomId, message.UserId, message.UpdatedAt, message.CreatedAt)
 	if err != nil {
 		m.l.Error("error in Create message query", err.Error())

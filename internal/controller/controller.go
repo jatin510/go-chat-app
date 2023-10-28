@@ -22,4 +22,5 @@ func Init(services *services.Services, l models.Logger) *Controllers {
 
 func (c *Controllers) InitSocketConsumer(socketConsumer socket_consumer.SocketConsumer) {
 	c.Room.InitSocketConsumer(socketConsumer)
+	c.Chat.InitSocketConsumer(socketConsumer)
 }
