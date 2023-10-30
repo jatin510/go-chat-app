@@ -2,6 +2,7 @@ package socket_consumer
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jatin510/go-chat-app/internal/models"
@@ -27,7 +28,7 @@ func (c SocketConsumer) Init() {
 	for {
 		select {
 		case job := <-c.Job:
-			fmt.Println("job: ", job)
+			log.Println("job: ", job)
 			go c.handle(job.Event, job.Data, job.Write)
 		}
 	}
@@ -41,11 +42,23 @@ type JoinRoomPayload struct {
 func (c *SocketConsumer) handle(eventName string, payload interface{}, write chan interface{}) {
 	switch eventName {
 	case utils.JOIN_ROOM:
-		p := payload.(JoinRoomPayload)
-		err := c.socket.JoinRoom(p.UserId, p.RoomId)
-		if err != nil {
-			fmt.Println("err: ", err)
+		{
+			p := payload.(JoinRoomPayload)
+			err := c.socket.JoinRoom(p.UserId, p.RoomId)
+			if err != nil {
+				fmt.Println("err: ", err)
+			}
+			write <- err
 		}
-		write <- err
+
+	case utils.SEND_MSG:
+		{
+			p := payload.(models.PostChatPayload)
+			err := c.socket.SendMessageToRoom(p.Message, p.UserId, p.RoomId)
+			if err != nil {
+				fmt.Println("err: ", err)
+			}
+			write <- err
+		}
 	}
 }

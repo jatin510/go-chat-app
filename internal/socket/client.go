@@ -299,3 +299,17 @@ func (sck *Socket) insertClientInRooms(rooms []models.Room, client *Client) erro
 
 	return nil
 }
+
+func (sck *Socket) SendMessageToRoom(msg string, userId uuid.UUID, roomId uuid.UUID) error {
+	clients := sck.hub.rooms[roomId]
+
+	for _, client := range clients {
+		client.send <- []byte(msg)
+	}
+
+	return nil
+}
+
+type SocketServiceInterface interface {
+	SendMessageToRoom(msg string, roomId uuid.UUID, userId uuid.UUID) error
+}

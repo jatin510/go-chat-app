@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -124,7 +123,7 @@ func (rc RoomController) Join(rw http.ResponseWriter, r *http.Request) {
 
 	e := <-write
 	e = e.(error)
-	fmt.Println(e)
+	rc.l.Error("error in socket consumer event", e)
 
 	utils.SendHttpResponse(rw, http.StatusOK, sub)
 }

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -57,7 +56,7 @@ func (r RoomService) GetAllRoomsByUserId(userId uuid.UUID) ([]models.Room, error
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("GetAllRoomsByUserId rooms: ", rooms)
+	r.l.Info("GetAllRoomsByUserId rooms: ", rooms)
 
 	return rooms, nil
 }

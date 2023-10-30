@@ -21,3 +21,9 @@ id --- roomId --- userId --- created_at --- updated_at
 
 4. Messages
 id --- msg --- roomId --- userId --- created_at --- updated_at
+
+# TODO
+
+- ci/cd
+- pre commit hooks / pre push
+- kubernetes
