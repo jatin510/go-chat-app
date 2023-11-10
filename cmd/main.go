@@ -30,7 +30,7 @@ var (
 
 func init() {
 	if err := godotenv.Load(); err != nil {
-		panic("Error loading .env file")
+		print("Error loading .env file")
 	}
 }
 
