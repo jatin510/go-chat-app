@@ -118,7 +118,7 @@ func TestChatService_Send(t *testing.T) {
 		// 		},
 		// 		err: errors.New("error in create message"),
 		// 	},
-		// 	wantErr: true,
+		// 	wantErr: false,
 		// },
 	}
 	for _, tt := range tests {
@@ -129,7 +129,7 @@ func TestChatService_Send(t *testing.T) {
 			}
 
 			// we will use mock repo
-			messageRepo.On("Create", mock.Anything).Return(tt.want.message, tt.want.err).Maybe()
+			messageRepo.On("Create", mock.Anything).Return(tt.want.message, tt.want.err)
 
 			got, err := c.Send(tt.args.m, tt.args.rId, tt.args.userId)
 			if (err != nil) != tt.wantErr {

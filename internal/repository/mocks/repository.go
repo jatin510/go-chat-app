@@ -10,7 +10,7 @@ const (
 	DBQueryTimeout = 10 * time.Second
 )
 
-func Init() (*repository.Repository, MessageRepoMock) {
+func Init() (*repository.Repository, *MessageRepoMock) {
 	message := NewMessageRepoMock()
 
 	return &repository.Repository{
