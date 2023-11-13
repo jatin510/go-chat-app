@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -99,27 +100,27 @@ func TestChatService_Send(t *testing.T) {
 			wantErr: false,
 		},
 		// error case
-		// {
-		// 	name: "message sent failed",
-		// 	fields: fields{
-		// 		l:    l,
-		// 		repo: repo,
-		// 	},
-		// 	args: args{
-		// 		m:      "hello",
-		// 		rId:    commonUUID,
-		// 		userId: commonUUID,
-		// 	},
-		// 	want: SendReturnType{
-		// 		message: models.Message{
-		// 			Msg:    "hello",
-		// 			RoomId: commonUUID,
-		// 			UserId: commonUUID,
-		// 		},
-		// 		err: errors.New("error in create message"),
-		// 	},
-		// 	wantErr: false,
-		// },
+		{
+			name: "message sent failed",
+			fields: fields{
+				l:    l,
+				repo: repo,
+			},
+			args: args{
+				m:      "hello",
+				rId:    commonUUID,
+				userId: commonUUID,
+			},
+			want: SendReturnType{
+				message: models.Message{
+					Msg:    "hello",
+					RoomId: commonUUID,
+					UserId: commonUUID,
+				},
+				err: errors.New("error in create message"),
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -129,11 +130,18 @@ func TestChatService_Send(t *testing.T) {
 			}
 
 			// we will use mock repo
-			messageRepo.On("Create", mock.Anything).Return(tt.want.message, tt.want.err)
+			messageRepoMock := messageRepo.On("Create", mock.Anything).Return(tt.want.message, tt.want.err)
+
+			defer messageRepoMock.Unset()
 
 			got, err := c.Send(tt.args.m, tt.args.rId, tt.args.userId)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ChatService.Send() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr {
+				assert.Equal(t, tt.want.err, err)
 				return
 			}
 
