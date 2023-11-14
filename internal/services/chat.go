@@ -53,7 +53,7 @@ func (c ChatService) GetAll() ([]models.Message, error) {
 	var filter = make(map[string]any)
 	msgs, err := c.repo.Message.FindAll(filter)
 	if err != nil {
-		c.l.Error("error in create message ", err.Error())
+		c.l.Error("error in get all rooms", err.Error())
 		return []models.Message{}, err
 	}
 

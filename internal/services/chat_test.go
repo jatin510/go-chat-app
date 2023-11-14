@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jatin510/go-chat-app/internal/models"
@@ -153,6 +154,16 @@ func TestChatService_Send(t *testing.T) {
 }
 
 func TestChatService_GetAll(t *testing.T) {
+	repo, messageRepo := mocks.Init()
+
+	l := utils.NewLogger()
+
+	commonUUID := uuid.New()
+
+	type GetAllReturnType struct {
+		messages []models.Message
+		err      error
+	}
 	type fields struct {
 		l    models.Logger
 		repo *repository.Repository
@@ -160,10 +171,39 @@ func TestChatService_GetAll(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    []models.Message
+		want    GetAllReturnType
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Get all rooms",
+			fields: fields{
+				repo: repo,
+				l:    l,
+			},
+			want: GetAllReturnType{
+				messages: []models.Message{{
+					ID:        commonUUID,
+					Msg:       "Hello",
+					RoomId:    commonUUID,
+					UserId:    commonUUID,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error in Get all rooms",
+			fields: fields{
+				repo: repo,
+				l:    l,
+			},
+			want: GetAllReturnType{
+				messages: []models.Message{},
+				err:      errors.New("error in fetching all rooms"),
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -171,12 +211,24 @@ func TestChatService_GetAll(t *testing.T) {
 				l:    tt.fields.l,
 				repo: tt.fields.repo,
 			}
+
+			// we will use mock repo
+			messageRepoMock := messageRepo.On("FindAll", mock.Anything).Return(tt.want.messages, tt.want.err)
+
+			defer messageRepoMock.Unset()
+
 			got, err := c.GetAll()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ChatService.GetAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+
+			if tt.wantErr {
+				assert.Equal(t, tt.want.err, err)
+				return
+			}
+
+			if !reflect.DeepEqual(got, tt.want.messages) {
 				t.Errorf("ChatService.GetAll() = %v, want %v", got, tt.want)
 			}
 		})
